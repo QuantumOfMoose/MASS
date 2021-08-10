@@ -70,14 +70,14 @@ rlm.default <-
            maxit = 20, acc = 1e-4, test.vec = "resid", lqs.control=NULL)
 {
     irls.delta <- function(old, new)
-        sqrt(sum((old - new)^2)/max(1e-20, sum(old^2)))
+        sqrt(sum((old - new)^2)/max(1e-20, sum(Conj(old)*old)))
     irls.rrxwr <- function(x, w, r)
     {
         w <- sqrt(w)
         max(abs((matrix(r * w, 1L, length(r)) %*% x)/
                 sqrt(matrix(w, 1L, length(r)) %*% (x^2))))/sqrt(sum(w * r^2))
     }
-    wmad <- function(x, w)
+    wmad <- function(x, w) ## I'm not sure how well this will work with complex numbers.
     {
         o <- sort.list(abs(x)); x <- abs(x)[o]; w <- w[o]
         p <- cumsum(w)/sum(w)
@@ -166,16 +166,23 @@ rlm.default <-
     ## At this point the residuals are weighted for inv.var and
     ## unweighted for case weights.  Only Huber handles case weights
     ## correctly.
+    if(is.complex(resid)) {
+      #library(depth) # Contains function med(), which finds multivariate median. Don't need to import it here since I put it in depends in description file.
+      residdf <- data.frame(Re(resid), Im(resid)) 
+      }
     if(scale.est != "MM")
-        scale <- if(is.null(wt)) mad(resid, 0) else wmad(resid, wt)
+        scale <- if(is.null(wt)) {
+          if(is.complex(resid)) mad(resid, center = complex(real = med(residdf)$median[1], imaginary = med(residdf)$median[2]), 0)
+          else mad(resid, 0) 
+          } else wmad(resid, wt)
     for(iiter in 1L:maxit) {
         if(!is.null(test.vec)) testpv <- get(test.vec)
         if(scale.est != "MM") {
             scale <- if(scale.est == "MAD")
                 if(is.null(wt)) median(abs(resid))/0.6745 else wmad(resid, wt)
             else if(is.null(wt))
-                sqrt(sum(pmin(resid^2, (k2 * scale)^2))/(n1*gamma))
-            else sqrt(sum(wt*pmin(resid^2, (k2 * scale)^2))/(n1*gamma))
+                sqrt(sum(pmin(Conj(resid)*resid, Conj(k2 * scale)*(k2 * scale)))/(n1*gamma))
+            else sqrt(sum(wt*pmin(Conj(resid)*resid, Conj(k2 * scale)*(k2 * scale)))/(n1*gamma))
             if(scale == 0) {
                 done <- TRUE
                 break
@@ -281,7 +288,7 @@ summary.rlm <- function(object, method = c("XtX", "XtWX"),
     names(rowlen) <- cnames
     if(correlation) {
         correl <- rinv * array(1/rowlen, c(p, p))
-        correl <- correl %*% t(correl)
+        correl <- correl %*% Conj(t(correl))
     } else correl <- NULL
     coef <- array(coef, c(p, 3L))
     dimnames(coef) <- list(cnames, c("Value", "Std. Error", "t value"))
@@ -294,7 +301,7 @@ summary.rlm <- function(object, method = c("XtX", "XtWX"),
     object$stddev <- stddev
     object$df <- c(p, rdf, ptotal)
     object$r.squared <- NA
-    object$cov.unscaled <- rinv %*% t(rinv)
+    object$cov.unscaled <- rinv %*% Conj(t(rinv))
     object$correlation <- correl
     object$terms <- NA
     class(object) <- "summary.rlm"
@@ -313,7 +320,7 @@ function(x, digits = max(3, .Options$digits - 3), ...)
         "Residuals:\n", sep="")
     if(rdf > 5L) {
         if(length(dim(resid)) == 2L) {
-            rq <- apply(t(resid), 1L, quantile)
+            rq <- apply(Conj(t(resid)), 1L, quantile)
             dimnames(rq) <- list(c("Min", "1Q", "Median", "3Q", "Max"),
                                  colnames(resid))
         } else {
@@ -361,7 +368,7 @@ psi.hampel <- function(u, a = 2, b = 4, c = 8, deriv=0)
 psi.bisquare <- function(u, c = 4.685, deriv=0)
 {
     if(!deriv) return((1  - pmin(1, abs(u/c))^2)^2)
-    t <- (u/c)^2
+    t <- Conj(u/c)*(u/C)
     ifelse(t < 1, (1 - t)*(1 - 5*t), 0)
 }
 
