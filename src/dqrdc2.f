@@ -1,6 +1,6 @@
-C     zqrdc2 is a *modification* of Linpack's zqrdc ('ZQRDC') for R
+C     Dqrdc2 is a *modification* of Linpack's dqrdc ('DQRDC') for R
 c
-c     zqrdc2 uses householder transformations to compute the qr
+c     dqrdc2 uses householder transformations to compute the qr
 c     factorization of an n by p matrix x.  a limited column
 c     pivoting strategy based on the 2-norms of the reduced columns
 c     moves columns with near-zero norm to the right-hand edge of
@@ -16,7 +16,7 @@ c     Another change was to compute the rank.
 c
 c     on entry
 c
-c        x       complex*16(ldx,p), where ldx .ge. n.
+c        x       double precision(ldx,p), where ldx .ge. n.
 c                x contains the matrix whose decomposition is to be
 c                computed.
 c
@@ -40,7 +40,7 @@ c                the columns of x during pivoting.  on entry these
 c                should be set equal to the column indices of the
 c                columns of the x matrix (typically 1 to p).
 c
-c        work    complex*16(p,2).
+c        work    double precision(p,2).
 c                work is a work array.
 c
 c     on return
@@ -48,7 +48,7 @@ c
 c        x       x contains in its upper triangle the upper
 c                triangular matrix r of the qr factorization.
 c                below its diagonal x contains information from
-c                which the unitary(orthogonal?) part of the decomposition
+c                which the orthogonal part of the decomposition
 c                can be recovered.  note that if pivoting has
 c                been requested, the decomposition is not that
 c                of the original matrix x but that of x
@@ -58,9 +58,9 @@ c        k       integer.
 c                k contains the number of columns of x judged
 c                to be linearly independent, i.e., "the rank"
 c
-c        qraux   complex*16(p).
+c        qraux   double precision(p).
 c                qraux contains further information required to recover
-c                the unitary part of the decomposition.
+c                the orthogonal part of the decomposition.
 c
 c        jpvt    jpvt(j) contains the index of the column of the
 c                original matrix that has been interchanged into
@@ -68,39 +68,30 @@ c                the j-th column.  Consequently, jpvt[] codes a
 c		 permutation of 1:p; it is called 'pivot' in R
 
 c
-c     Original (zqrdc.f) linpack version dated 08/14/78 .
+c     original (dqrdc.f) linpack version dated 08/14/78 .
 c     g.w. stewart, university of maryland, argonne national lab.
-c	
-c     This version dated 6 August 2021
-c     William Ryan
 c
-c     Changes based on those of dqrdc2.f by Ross Ihaka
+C     This version dated 22 August 1995
+C     Ross Ihaka
 c
-c     zqrdc uses the following functions and subprograms.
+c     bug fixes 29 September 1999 BDR (p > n case, inaccurate ranks)
 c
-c     blas zaxpy,zdotc,zscal,zswap,dznrm2
-c     fortran dabs,dmax1,cdabs,dcmplx,cdsqrt,min0
 c
-      subroutine zqrdc2(x,ldx,n,p,tol,k,qraux,jpvt,work)
+c     dqrdc2 uses the following functions and subprograms.
+c
+c     blas daxpy,ddot,dscal,dnrm2
+c     fortran dabs,dmax1,min0,dsqrt
+c
+      subroutine dqrdc2(x,ldx,n,p,tol,k,qraux,jpvt,work)
       integer ldx,n,p
       integer jpvt(p)
-      complex*16 x(ldx,p),qraux(p),work(p,2)
-      double precision tol
+      double precision x(ldx,p),qraux(p),work(p,2),tol
 c
 c     internal variables
 c
       integer i,j,l,lp1,lup,k
-      double precision maxnrm,dznrm2,tt,ttt
-      complex*16 zdotc,nrmxl,t
-c
-      complex*16 csign,zdum,zdum1,zdum2
-      double precision cabs1
-      double precision dreal,dimag
-      complex*16 zdumr,zdumi
-      dreal(zdumr) = zdumr
-      dimag(zdumi) = (0.0d0,-1.0d0)*zdumi
-      csign(zdum1,zdum2) = cdabs(zdum1)*(zdum2/cdabs(zdum2))
-      cabs1(zdum) = dabs(dreal(zdum)) + dabs(dimag(zdum))
+      double precision dnrm2,tt,ttt
+      double precision ddot,nrmxl,t
 c
 c
 c     compute the norms of the columns of x.
@@ -108,11 +99,10 @@ c
       if (n .gt. 0) then
 c       avoid accessing element beyond the bound
          do 70 j = 1, p
-            qraux(j) = dcmplx(dznrm2(n,x(1,j),1),0.0d0)
+            qraux(j) = dnrm2(n,x(1,j),1)
             work(j,1) = qraux(j)
             work(j,2) = qraux(j)
-            if(cabs1(work(j,2)) .eq. 0.0d0)
-     *      	work(j,2) = dcmplx(1.0d0,0.0d0)
+            if(work(j,2) .eq. 0.0d0) work(j,2) = 1.0d0
   70     continue
       endif
 c
@@ -131,8 +121,7 @@ c     tol times its original norm.  the check for l .le. k
 c     avoids infinite cycling.
 c
    80    continue
-         if((l .ge. k) .or. (cdabs(qraux(l)) .ge. cdabs(work(l,2)*tol)))
-     *       go to 120
+         if (l .ge. k .or. qraux(l) .ge. work(l,2)*tol) go to 120
             lp1 = l+1
             do 100 i=1,n
                t = x(i,l)
@@ -143,8 +132,8 @@ c
   100       continue
             i = jpvt(l)
             t = qraux(l)
-            tt = dreal(work(l,1))
-            ttt = dreal(work(l,2))
+            tt = work(l,1)
+            ttt = work(l,2)
             do 110 j=lp1,p
                jpvt(j-1) = jpvt(j)
                qraux(j-1) = qraux(j)
@@ -153,8 +142,8 @@ c
   110       continue
             jpvt(p) = i
             qraux(p) = t
-            work(p,1) = dcmplx(tt,0.0d0)
-            work(p,2) = dcmplx(ttt,0.0d0)
+            work(p,1) = tt
+            work(p,2) = ttt
             k = k - 1
             go to 80
   120    continue
@@ -162,12 +151,11 @@ c
 c
 c           compute the householder transformation for column l.
 c
-            nrmxl = dcmplx(dznrm2(n-l+1,x(l,l),1),0.0d0)
-            if (cabs1(nrmxl) .eq. 0.0d0) go to 180
-               if (cabs1(x(l,l)) .ne. 0.0d0)
-     *            nrmxl = csign(nrmxl,x(l,l))
-               call zscal(n-l+1,(1.0d0,0.0d0)/nrmxl,x(l,l),1)
-               x(l,l) = (1.0d0,0.0d0) + x(l,l)
+            nrmxl = dnrm2(n-l+1,x(l,l),1)
+            if (nrmxl .eq. 0.0d0) go to 180
+               if (x(l,l) .ne. 0.0d0) nrmxl = dsign(nrmxl,x(l,l))
+               call dscal(n-l+1,1.0d0/nrmxl,x(l,l),1)
+               x(l,l) = 1.0d0 + x(l,l)
 c
 c              apply the transformation to the remaining columns,
 c              updating the norms.
@@ -175,28 +163,25 @@ c
                lp1 = l + 1
                if (p .lt. lp1) go to 170
                do 160 j = lp1, p
-                  t = -zdotc(n-l+1,x(l,l),1,x(l,j),1)/x(l,l)
-                  call zaxpy(n-l+1,t,x(l,l),1,x(l,j),1)
-                  if (j .lt. pl .or. j .gt. pu) go to 150
-                  if (cabs1(qraux(j)) .eq. 0.0d0) go to 150
-                     tt = 1.0d0 - (cdabs(x(l,j))/dreal(qraux(j)))**2
+                  t = -ddot(n-l+1,x(l,l),1,x(l,j),1)/x(l,l)
+                  call daxpy(n-l+1,t,x(l,l),1,x(l,j),1)
+                  if (qraux(j) .eq. 0.0d0) go to 150
+                     tt = 1.0d0 - (dabs(x(l,j))/qraux(j))**2
                      tt = dmax1(tt,0.0d0)
-                     t = dcmplx(tt,0.0d0)
+                     t = tt
 c
 c modified 9/99 by BDR. Re-compute norms if there is large reduction
 c The tolerance here is on the squared norm
 c In this version we need accurate norms, so re-compute often.
 c  work(j,1) is only updated in one case: looks like a bug -- no longer used
 c
-c                     tt = 1.0d0
-c     *                    + 0.05d0*tt
-c     *                      *(dreal(qraux(j))/dreal(work(j,1)))**2
+c                     tt = 1.0d0 + 0.05d0*tt*(qraux(j)/work(j,1))**2
 c                     if (tt .eq. 1.0d0) go to 130
-                     if (cdabs(t) .lt. 1d-6) go to 130
-                        qraux(j) = qraux(j)*cdsqrt(t)
+                     if (dabs(t) .lt. 1d-6) go to 130
+                        qraux(j) = qraux(j)*dsqrt(t)
                      go to 140
   130                continue
-                        qraux(j) = dcmplx(dznrm2(n-l,x(l+1,j),1),0.0d0)
+                        qraux(j) = dnrm2(n-l,x(l+1,j),1)
                         work(j,1) = qraux(j)
   140                continue
   150             continue

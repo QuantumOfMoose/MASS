@@ -131,8 +131,7 @@ c     tol times its original norm.  the check for l .le. k
 c     avoids infinite cycling.
 c
    80    continue
-         if((l .ge. k) .or. (cdabs(qraux(l)) .ge. cdabs(work(l,2)*tol)))
-     *       go to 120
+         if ((l .ge. k) .or. (cdabs(qraux(l)) .ge. cdabs(work(l,2)*tol))) go to 120
             lp1 = l+1
             do 100 i=1,n
                t = x(i,l)

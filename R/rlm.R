@@ -67,10 +67,16 @@ rlm.default <-
            init = "ls", psi = psi.huber,
            scale.est = c("MAD", "Huber", "proposal 2"), k2 = 1.345,
            method = c("M", "MM"), wt.method = c("inv.var", "case"),
-           maxit = 20, acc = 1e-4, test.vec = "resid", lqs.control=NULL)
+           maxit = 20, acc = 1e-4, test.vec = "resid", lqs.control=NULL, interc=FALSE)
 {
+    if (!is.matrix(x) && interc) {
+      xx <- as.matrix(data.frame(rep(1, length(x)), x))
+      attr(xx, "dimnames") <- list(as.character(1:length(x)), c("(intercept)", deparse(substitute(x))))
+      attr(xx, "assign") <- c(0,1)
+      x <- xx
+    }
     irls.delta <- function(old, new)
-        sqrt(sum((old - new)^2)/max(1e-20, sum(Conj(old)*old)))
+        as.numeric(sqrt(sum(Conj(old - new)*Conj(old-new))/max(1e-20, as.numeric(sum(Conj(old)*old)))))
     irls.rrxwr <- function(x, w, r)
     {
         w <- sqrt(w)
@@ -128,7 +134,7 @@ rlm.default <-
             formals(psi)[pm] <- unlist(arguments[pm])
         }
         if(is.character(init)) {
-            temp <- if(init == "ls") lm.wfit(x, y, w, method="qr")
+            temp <- if(init == "ls") if(is.complex(x) | is.complex(y)) zlm.wfit(x, y, w, method="qr") else lm.wfit(x, y, w, method="qr")
             else if(init == "lts") {
                 if(is.null(lqs.control)) lqs.control <- list(nsamp=200L)
                 do.call("lqs", c(list(x, y, intercept = FALSE), lqs.control))
@@ -167,7 +173,7 @@ rlm.default <-
     ## unweighted for case weights.  Only Huber handles case weights
     ## correctly.
     if(is.complex(resid)) {
-      #library(depth) # Contains function med(), which finds multivariate median. Don't need to import it here since I put it in depends in description file.
+      ##library(depth) # Contains function med(), which finds multivariate median. Don't need to import it here since I put it in depends in description file. Then again, maybe I do...
       residdf <- data.frame(Re(resid), Im(resid)) 
       }
     if(scale.est != "MM")
@@ -190,7 +196,7 @@ rlm.default <-
         }
         w <- psi(resid/scale)
         if(!is.null(wt)) w <- w * weights
-        temp <- lm.wfit(x, y, w, method="qr")
+        if(is.complex(x)) temp <- zlm.wfit(x, y, w, method="qr") else temp <- lm.wfit(x, y, w, method="qr")
         coef <- temp$coefficients
         resid <- temp$residuals
         if(!is.null(test.vec)) convi <- irls.delta(testpv, get(test.vec))
@@ -368,7 +374,7 @@ psi.hampel <- function(u, a = 2, b = 4, c = 8, deriv=0)
 psi.bisquare <- function(u, c = 4.685, deriv=0)
 {
     if(!deriv) return((1  - pmin(1, abs(u/c))^2)^2)
-    t <- Conj(u/c)*(u/C)
+    t <- Conj(u/c)*(u/c)
     ifelse(t < 1, (1 - t)*(1 - 5*t), 0)
 }
 

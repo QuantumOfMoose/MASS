@@ -12,7 +12,7 @@ export(addterm, area, as.fractions, bandwidth.nrd, bcv, boxcox,
        parcoord, polr, psi.bisquare, psi.hampel, psi.huber, qda,
        rational, renumerate, rlm, rms.curv, rnegbin, sammon, select,
        Shepard, stdres, stepAIC, studres, theta.md, theta.ml,
-       theta.mm, truehist, ucv, width.SJ, write.matrix)
+       theta.mm, truehist, ucv, width.SJ, write.matrix, cov.zrob)
 
 # formerly in package lqs
 export(cov.mcd, cov.mve, cov.rob, lmsreg, lqs, lqs.formula, ltsreg)
@@ -56,8 +56,7 @@ importFrom(stats, add1, anova, biplot, coef, confint, drop1,
            napredict, naprint, naresid, optim, optimize, pcauchy,
            pchisq, pf, plogis, pnorm, qchisq, qf, qnorm, qt, quantile,
            rcauchy, rexp, rgamma, rlogis, rnorm, rpois, runif, sd,
-           spline, summary.glm, uniroot, update.formula, var)
-importFrom(depth, med)
+           spline, summary.glm, uniroot, update.formula, var, zvar)
 
 S3method("[", fractions)
 S3method("[<-", fractions)

@@ -85,11 +85,12 @@ lqs.default <-
       if(missing(quantile)) quantile <- floor(n/2) + floor((p+1)/2)
     }
     if(method == "S") {
+      ### chi is also in lqs.c and zlqs.c, why define it twice in two different languages?
       lts <- 2
       beta <- 0.5
       quantile <- ceiling(n/2)
       chi <- function(u, k0)
-      { u <- (u/k0)^2; ifelse(u < 1, 3*u - 3*u^2 + u^3, 1) }
+      { u <- as.numeric(Conj(u/k0)*(u/k0)); ifelse(u < 1, 3*u - 3*u^2 + u^3, 1) }
     }
     if(quantile > n-1)
       stop(gettextf("'quantile' must be at most %d", n-1),
@@ -162,7 +163,7 @@ lqs.default <-
       scale <- s
       for(i in 1L:30L) {
         w <- psi(resid/scale, k0)
-        temp <- lm.wfit(x, y, w, method="qr")
+        if (is.complex(x)) temp <- zlm.wfit(x, y, w, method="qr") else temp <- zlm.wfit(x, y, w, method="qr")
         resid <- temp$residuals
         s2 <- scale*sqrt(sum(chi(resid/scale, k0))/((n-p)*beta))
         if (is.complex(s2)) if(abs(abs(s2/scale) - 1) < 1e-5) break
@@ -210,6 +211,13 @@ predict.lqs <- function (object, newdata, na.action = na.pass, ...)
 cov.rob <- function(x, cor = FALSE, quantile.used = floor((n+p+1)/2),
                     method = c("mve", "mcd", "classical"), nsamp = "best", seed)
 {
+  method <- match.arg(method)
+  x <- as.matrix(x)
+  if(any(is.na(x)) || any(is.infinite(x)))
+    stop("missing or infinite values are not allowed")
+  n <- nrow(x); p <- ncol(x)
+  if(n < p+1)
+    stop(gettextf("at least %d cases are needed", p+1), domain = NA)
   if (is.numeric(x)) cov.rrob(x = x, cor = FALSE, quantile.used = quantile.used,
                               method = method, nsamp = nsamp, seed = seed)
   else if (is.complex(x)) cov.zrob(x = x, cor = FALSE, quantile.used = quantile.used,
@@ -316,7 +324,7 @@ cov.zrob <- function(x, cor = FALSE, quantile.used = floor((n+p+1)/2),
   if(n < p+1)
     stop(gettextf("at least %d cases are needed", p+1), domain = NA)
   if(method == "classical") {
-    ans <- list(center = colmeans(x), var = zvar(x))
+    ans <- list(center = colMeans(x), var = zvar(x))
   } else {
     if(quantile.used < p+1)
       stop(gettextf("'quantile' must be at least %d", p+1), domain = NA)

@@ -2,19 +2,18 @@
 Complexdqlrs <- function (x, y, tol, chk) {
   thisqr <- qr(x, tol = tol)
   coefficients <- qr.coef(thisqr, y)
-  resids <- qr.resid(thisqr, y)
+  resids <- y - x %*% coefficients
   effects <- qr.qty(thisqr, y)
   xrank <- thisqr$rank
   pivot <- thisqr$pivot
   qraux <- thisqr$qraux
-  pivoted <- Any(pivot[i] > i + 1) * 1
+  pivoted <- any(pivot > (1:length(pivot)) + 1) * 1
   ans = list(qr = thisqr, coefficients = coefficients, residuals = resids, effects = effects, rank = xrank, 
              pivot = pivot, qraux = qraux, tol = tol, pivoted = pivoted)
   return(ans)
 }
 
-
-lm.wfit <- function (x, y, w, offset = NULL, method = "qr", tol = 1e-07, 
+zlm.wfit <- function (x, y, w, offset = NULL, method = "qr", tol = 1e-07, 
           singular.ok = TRUE, ...) 
 {
   if (is.null(n <- nrow(x))) 
@@ -36,7 +35,7 @@ lm.wfit <- function (x, y, w, offset = NULL, method = "qr", tol = 1e-07,
   chkDots(...)
   x.asgn <- attr(x, "assign")
   zero.weights <- any(w == 0)
-  if (zero.weights) {.
+  if (zero.weights) {
     save.r <- y
     save.f <- y
     save.w <- w
@@ -63,7 +62,7 @@ lm.wfit <- function (x, y, w, offset = NULL, method = "qr", tol = 1e-07,
                 fitted.values = 0 * y, weights = w, rank = 0L, df.residual = 0L))
   }
   wts <- sqrt(w)
-  z <- if(is.complex(x)) Complexdqlrs(x * wts, y * wts, tol, FALSE) else .Call(C_Cdqrls, x * wts, y * wts, tol, FALSE)
+  z <- Complexdqlrs(x * wts, y * wts, tol, FALSE)
   if (!singular.ok && z$rank < p) 
     stop("singular fit encountered")
   coef <- z$coefficients

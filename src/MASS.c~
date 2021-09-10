@@ -23,7 +23,6 @@
 #include <R.h>
 #include <R_ext/Applic.h>
 #include <R_ext/Complex.h> // This contains the Rcomplex type. (It's a struct.)
-#include <R_ext/Lapack.h>
 
 #ifndef max
 #  define max(a,b) ((a) > (b) ? (a) : (b))
