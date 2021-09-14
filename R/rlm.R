@@ -14,6 +14,16 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 #
+
+### A complex version of Median Absolute Deviation. Uses the multivariate median function med() from the depth package.
+#zmad <- funcion(x)
+#{
+#  xdf <- data.frame(Re(x),Im(x))
+#  centerdf <- med(xdf, method = "Spatial")$median
+#  center <- complex(real = centerdf[1], imaginary = centerdf[2])
+#  median(abs(x-center))
+#}
+
 rlm <- function(x, ...) UseMethod("rlm")
 
 rlm.formula <-
@@ -178,8 +188,9 @@ rlm.default <-
       }
     if(scale.est != "MM")
         scale <- if(is.null(wt)) {
-          if(is.complex(resid)) mad(resid, center = complex(real = med(residdf)$median[1], imaginary = med(residdf)$median[2]), 0)
-          else mad(resid, 0) 
+          #if(is.complex(resid)) mad(resid, center = complex(real = med(residdf, method = spatial)$median[1], imaginary = med(residdf, method = spatial)$median[2]), 0)
+          #else mad(resid, 0)
+          mad(resid, 0)
           } else wmad(resid, wt)
     for(iiter in 1L:maxit) {
         if(!is.null(test.vec)) testpv <- get(test.vec)

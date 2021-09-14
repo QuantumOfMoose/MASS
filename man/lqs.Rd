@@ -90,7 +90,7 @@ ltsreg(\dots)
   Suppose there are \code{n} data points and \code{p} regressors,
   including any intercept.
 
-  The first three methods minimize some function of the sorted squared
+  The first three methods minimize some function of the sorted squared (Conj()*() for complex data)
   residuals. For methods \code{"lqs"} and \code{"lms"} is the
   \code{quantile} squared residual, and for \code{"lts"} it is the sum
   of the \code{quantile} smallest squared residuals. \code{"lqs"} and
@@ -117,6 +117,8 @@ ltsreg(\dots)
     }
 }
 \note{
+  Now works with complex valued data!
+
   There seems no reason other than historical to use the \code{lms} and
   \code{lqs} options.  LMS estimation is of low efficiency (converging
   at rate \eqn{n^{-1/3}}) whereas LTS has the same asymptotic efficiency

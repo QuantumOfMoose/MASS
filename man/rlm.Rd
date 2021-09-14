@@ -28,7 +28,7 @@ rlm(x, \dots)
     init = "ls", psi = psi.huber,
     scale.est = c("MAD", "Huber", "proposal 2"), k2 = 1.345,
     method = c("M", "MM"), wt.method = c("inv.var", "case"),
-    maxit = 20, acc = 1e-4, test.vec = "resid", lqs.control = NULL)
+    maxit = 20, acc = 1e-4, test.vec = "resid", lqs.control = NULL, interc = FALSE)
 
 psi.huber(u, k = 1.345, deriv = 0)
 psi.hampel(u, a = 2, b = 4, c = 8, deriv = 0)
@@ -36,7 +36,7 @@ psi.bisquare(u, c = 4.685, deriv = 0)
 }
 \arguments{
   \item{formula}{
-    a formula of the form \code{y ~ x1 + x2 + \dots}.
+    a formula of the form \code{y ~ x1 + x2 + \dots}. Not currently usable with complex valued data.
   }
   \item{data}{
     an optional data frame, list or environment from which variables
@@ -133,6 +133,13 @@ psi.bisquare(u, c = 4.685, deriv = 0)
     \code{0} or \code{1}: compute values of the psi function or of its
     first derivative.
   }
+  \item{interc}{
+  TRUE or FALSE, default is FALSE. Used with rlm.default when fitting 
+  complex valued data. 
+  If true, a y-intercept is calculated during fitting. 
+  Otherwise, the intercept is set to zero. For real valued data, this functionality
+  is supplied by rlm.formula.
+  }
 }
 \value{
   An object of class \code{"rlm"} inheriting from \code{"lm"}.
@@ -181,8 +188,12 @@ psi.bisquare(u, c = 4.685, deriv = 0)
   this is true for the default value of \code{c} that corresponds to
   95\% relative efficiency at the normal.  Case weights are not
   supported for \code{method = "MM"}.
+  
+  Using \code{method = "MM"} may cause R to crash when fitting complex data.
 }
 \note{
+  Now supports complex data!
+
   Prior to version \code{7.3-52}, offset terms in \code{formula}
   were omitted from fitted and predicted values.
 }
