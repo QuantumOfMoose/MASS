@@ -86,7 +86,7 @@ rlm.default <-
       x <- xx
     }
     irls.delta <- function(old, new)
-        as.numeric(sqrt(sum(Conj(old - new)*Conj(old-new))/max(1e-20, as.numeric(sum(Conj(old)*old)))))
+        as.numeric(sqrt(sum(Conj(old - new)*(old-new))/max(1e-20, as.numeric(sum(Conj(old)*old)))))
     irls.rrxwr <- function(x, w, r)
     {
         w <- sqrt(w)

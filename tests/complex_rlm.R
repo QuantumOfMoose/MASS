@@ -56,6 +56,14 @@ fitframe$z.robust <- mytestfit$coefficients[2] * w + mytestfit$coefficients[1]
 fitframe$res.robust <- mytestfit$residuals
 s.robust <- sqrt(Re(mean(Conj(fitframe$res.robust)*fitframe$res.robust))) ### This might be standard deviation or something similar.
 #
+# Robust complex linear fit, MM method.
+#
+print(mytestfitMM <- rlm(x = w, y = z, interc = TRUE, method = "MM"))
+rMMbeta.hat <- mytestfitMM$coefficients
+fitframe$z.robustMM <- mytestfitMM$coefficients[2] * w + mytestfitMM$coefficients[1]
+fitframe$res.robustMM <- mytestfitMM$residuals
+s.robustMM <- sqrt(Re(mean(Conj(fitframe$res.robustMM)*fitframe$res.robustMM))) ### This might be standard deviation or something similar.
+#
 # Show some diagnostics.
 #
 # par(mfrow=c(1,2))
@@ -143,7 +151,7 @@ library(reshape2)
 meltedfitframe <- melt(fitframe, id = "w")
 meltedfitframe$variable <- factor(meltedfitframe$variable, ordered = TRUE)
 
-betterplot2 <- ggplot(meltedfitframe[meltedfitframe$variable != "res.whuber" & meltedfitframe$variable != "res.robust",], aes(x = Re(value), y = Im(value), color = as.factor(variable), shape = as.factor(variable))) +
+betterplot2 <- ggplot(meltedfitframe[meltedfitframe$variable != "res.whuber" & meltedfitframe$variable != "res.robust" & meltedfitframe$variable != "res.robustMM",], aes(x = Re(value), y = Im(value), color = as.factor(variable), shape = as.factor(variable))) +
   geom_point(size = 3) +
   scale_shape_manual(values = c('z.pure'=19, 'z.clean'=0, 'z'=20, 'z.whuber'=18, 'z.robust'=18), labels = c('z.pure'='pure relationsip', 'z.clean'='random noise added', 'z'='noise and outliers', 'z.whuber'='from ordinary fit', 'z.robust'='from robust fit')) +
   scale_color_manual(values = c('z.pure'="cyan2", 'z.clean'='forestgreen', 'z'='black', 'z.whuber'='red', 'z.robust'='blue'), labels = c('z.pure'='pure relationsip', 'z.clean'='random noise added', 'z'='noise and outliers', 'z.whuber'='from ordinary fit', 'z.robust'='from robust fit')) +
